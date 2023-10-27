@@ -1,4 +1,4 @@
-# Cows and Bulls game in Elixir with Phoenix as REST API layer
+# Cows and Bulls game in Elixir with Cowboy as REST API layer
 
 More info about the game: https://en.wikipedia.org/wiki/Bulls_and_Cows
 

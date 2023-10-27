@@ -2,7 +2,7 @@ defmodule CowsAtRest.Game.Supervisor do
   @moduledoc false
   use Supervisor
 
-  alias CowsAtRest.Game.{ComputerResponder, ComputerInquirer, TurnDecider}
+  alias CowsAtRest.Game.{ComputerResponder, ComputerInquirer, GameController}
 
   @candidates CowsAtRest.Utils.cows_and_bulls_permutations()
 
@@ -24,7 +24,7 @@ defmodule CowsAtRest.Game.Supervisor do
     children = [
       {ComputerResponder, @candidates},
       {ComputerInquirer, @candidates},
-      {TurnDecider, :player}
+      {GameController, :player}
     ]
 
     Supervisor.init(children, strategy: :one_for_all)

@@ -9,7 +9,8 @@ defmodule CowsAtRest.Application do
   @spec start(any(), any()) :: {:error, any()} | {:ok, pid()}
   def start(_type, _args) do
     children = [
-      {CowsAtRest.Game.Supervisor, []}
+      {CowsAtRest.Game.Supervisor, []},
+      {Plug.Cowboy, scheme: :http, plug: CowsAtRest.Router, options: [port: 8080]}
       # Starts a worker by calling: CowsAtRest.Worker.start_link(arg)
       # {CowsAtRest.Worker, arg}
     ]

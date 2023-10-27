@@ -44,7 +44,8 @@ defmodule CowsAtRest.Game.ComputerInquirer do
       ) do
     new_candidates = Enum.filter(candidates, &(Utils.answer(inquiry, &1) == answer))
 
-    {:reply, :continue, %State{inquiry: Enum.random(new_candidates), candidates: new_candidates}}
+    {:reply, {:ok, :continue},
+     %State{inquiry: Enum.random(new_candidates), candidates: new_candidates}}
   end
 
   @impl true

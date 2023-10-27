@@ -5,6 +5,7 @@ defmodule CowsAtRest.Utils do
     @moduledoc false
     @type t :: %__MODULE__{bulls: integer, cows: integer}
 
+    @derive Jason.Encoder
     defstruct bulls: 0, cows: 0
   end
 
@@ -14,7 +15,7 @@ defmodule CowsAtRest.Utils do
   def permutations(list, rank),
     do: for(e <- list, rest <- permutations(list -- [e], rank - 1), do: [e | rest])
 
-  @spec cows_and_bulls_permutations() :: list(list(integer()))
+  @spec cows_and_bulls_permutations() :: [[integer()]]
   def cows_and_bulls_permutations,
     do: Enum.to_list(0..9) |> permutations(4) |> Enum.reject(&(hd(&1) == 0))
 

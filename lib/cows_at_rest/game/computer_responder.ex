@@ -19,6 +19,14 @@ defmodule CowsAtRest.Game.ComputerResponder do
 
   @impl true
   def handle_call([player_asks: candidate], _from, number) do
-    {:reply, Utils.answer(candidate, number), number}
+    answer = Utils.answer(candidate, number)
+    if answer.bulls == 4, do: GenServer.cast(self(), :game_over)
+
+    {:reply, answer, number}
+  end
+
+  @impl true
+  def handle_cast(:game_over, state) do
+    {:stop, :normal, state}
   end
 end

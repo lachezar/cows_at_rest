@@ -2,6 +2,8 @@ defmodule CowsAtRest.Game.GameController do
   @moduledoc false
   use Agent
 
+  alias CowsAtRest.Utils.Answer
+
   defmodule LogEntry do
     @moduledoc false
     @type t :: %__MODULE__{actor: atom(), number: [integer()], answer: Answer.t()}
@@ -29,11 +31,13 @@ defmodule CowsAtRest.Game.GameController do
   def current_turn_to_ask(),
     do: Agent.get(__MODULE__, & &1)
 
-  @spec change_turn_to_ask(atom(), [integer()], Answer.t()) :: :ok
-  def change_turn_to_ask(actor, number, answer) do
-    log_entry = %LogEntry{actor: actor, number: number, answer: answer}
+  @spec change_turn_to_ask([integer()], Answer.t()) :: :ok
+  def change_turn_to_ask(_number, %Answer{bulls: 4}), do: :ok
 
+  def change_turn_to_ask(number, answer) do
     Agent.update(__MODULE__, fn %State{actor_at_turn_to_ask: actor, log: log} ->
+      log_entry = %LogEntry{actor: actor, number: number, answer: answer}
+
       case actor do
         :player -> %State{actor_at_turn_to_ask: :computer, log: [log_entry | log]}
         :computer -> %State{actor_at_turn_to_ask: :player, log: [log_entry | log]}

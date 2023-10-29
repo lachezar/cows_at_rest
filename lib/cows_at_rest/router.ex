@@ -20,28 +20,28 @@ defmodule CowsAtRest.Router do
   end
 
   post "/player/ask" do
-    %GameController.State{actor_at_turn_to_ask: actor} = GameController.current_turn_to_ask()
-    %{"number" => number} = conn.body_params
-
-    if is_integer(number) && number > 999 && number < 10000 do
-      digits = Integer.digits(number)
-
-      if Enum.uniq(digits) == digits do
-        case actor do
-          :player ->
-            answer = GenServer.call(ComputerResponder, player_asks: digits)
-            GameController.change_turn_to_ask(actor, digits, answer)
-
-            json_response(conn, answer)
-
-          :computer ->
-            json_error_response(conn, "It is computer's turn")
-        end
-      else
-        json_error_response(conn, "The number must have non-repeating digits")
-      end
+    with %GameController.State{actor_at_turn_to_ask: :player} <-
+           GameController.current_turn_to_ask(),
+         {:required_input, %{"number" => number}} <- {:required_input, conn.body_params},
+         {:valid_input, true} <-
+           {:valid_input, is_integer(number) && number > 999 && number < 10000},
+         digits <- Integer.digits(number),
+         {:non_repeating_digits, true} <- {:non_repeating_digits, Enum.uniq(digits) == digits} do
+      answer = GenServer.call(ComputerResponder, player_asks: digits)
+      GameController.change_turn_to_ask(digits, answer)
+      json_response(conn, answer)
     else
-      json_error_response(conn, "The input must be an integer with 4 digits")
+      %GameController.State{actor_at_turn_to_ask: :computer} ->
+        json_error_response(conn, "It is computer's turn to ask")
+
+      {:required_input, _} ->
+        json_error_response(conn, "The input must contain a \"number\" field")
+
+      {:valid_input, false} ->
+        json_error_response(conn, "The input must be an integer with 4 digits")
+
+      {:non_repeating_digits, false} ->
+        json_error_response(conn, "The number must have non-repeating digits")
     end
   end
 
@@ -53,38 +53,39 @@ defmodule CowsAtRest.Router do
         json_error_response(conn, "It is player's turn")
 
       :computer ->
-        inquiry = GenServer.call(ComputerInquirer, :computer_asks)
+        inquiry = GenServer.call(ComputerInquirer, :computer_asks) |> Integer.undigits()
 
         json_response(conn, %{inquiry: inquiry})
     end
   end
 
   post "/player/answer" do
-    %GameController.State{actor_at_turn_to_ask: actor} = GameController.current_turn_to_ask()
-    %{"bulls" => bulls, "cows" => cows} = conn.body_params
-
-    if is_integer(bulls) && bulls >= 0 && bulls <= 4 && is_integer(cows) && cows >= 0 && cows <= 4 &&
-         cows + bulls <= 4 do
-      case actor do
-        :player ->
-          json_error_response(conn, "It is computer's turn")
-
-        :computer ->
-          answer = %Answer{bulls: bulls, cows: cows}
-
-          inquiry = GenServer.call(ComputerInquirer, :computer_asks)
-
-          {:ok, result} =
-            GenServer.call(ComputerInquirer, player_answers: answer)
-
-          GameController.change_turn_to_ask(actor, inquiry, answer)
-          json_response(conn, %{result: result})
-      end
+    with %GameController.State{actor_at_turn_to_ask: :computer} <-
+           GameController.current_turn_to_ask(),
+         {:required_input, %{"bulls" => bulls, "cows" => cows}} <-
+           {:required_input, conn.body_params},
+         {:valid_input, true} <-
+           {:valid_input,
+            is_integer(bulls) && bulls >= 0 && bulls <= 4 && is_integer(cows) && cows >= 0 &&
+              cows <= 4 &&
+              cows + bulls <= 4} do
+      answer = %Answer{bulls: bulls, cows: cows}
+      inquiry = GenServer.call(ComputerInquirer, :computer_asks)
+      {:ok, result} = GenServer.call(ComputerInquirer, player_answers: answer)
+      GameController.change_turn_to_ask(inquiry, answer)
+      json_response(conn, %{result: result})
     else
-      json_error_response(
-        conn,
-        "The cows and bulls must be between 0 and 4 and their sum must not exceed 4"
-      )
+      %GameController.State{actor_at_turn_to_ask: :player} ->
+        json_error_response(conn, "It is player's turn to ask")
+
+      {:required_input, _} ->
+        json_error_response(conn, "The input must contain \"bulls\" and \"cows\" fields")
+
+      {:valid_input, false} ->
+        json_error_response(
+          conn,
+          "The cows and bulls must be integer between 0 and 4 and their sum must not exceed 4"
+        )
     end
   end
 

@@ -2,20 +2,43 @@
 
 More info about the game: https://en.wikipedia.org/wiki/Bulls_and_Cows
 
-## Installation
+## Run it
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `cows_at_rest` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:cows_at_rest, "~> 0.1.0"}
-  ]
-end
+```
+mix deps.get
+mix run --no-halt
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/cows_at_rest>.
+## API examples
 
+Try to guess computer's number:
+
+```
+curl -v --data '{"number": 1763}' -H "Content-type: application/json" http://localhost:8080/player/ask
+{"bulls":0,"cows":2}
+```
+
+Look up computer's inquiry towards you:
+
+```
+curl http://localhost:8080/computer/ask
+{"inquiry":5403}
+```
+
+Answer computer's inquiry:
+
+```
+curl --data '{"bulls": 1, "cows": 0}' -H "Content-type: application/json" http://localhost:8080/player/answer
+{"result":"continue"}
+```
+
+Game's log:
+
+```
+curl  http://localhost:8080/
+{"log":[{"number":[5,4,0,3],"answer":{"bulls":1,"cows":0},"actor":"computer"},{"number":[1,7,6,3],"answer":{"bulls":0,"cows":2},"actor":"player"}],"actor_at_turn_to_ask":"player"}
+```
+
+## Cheating
+
+If you run the application in interactive mode with `iex -S run mix` then you can inspect the state of the `ComputerResponder` which holds the computer's number by doing `:sys.get_state(CowsAtRest.Game.ComputerResponder)`.
